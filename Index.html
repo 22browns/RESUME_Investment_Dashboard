@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Investment Dashboard</title>
+</head>
+
+<body>
+    <div class="text-center">
+        <h1>Stock Ticker Search</h1>
+        <label>Stock Ticker:</label>
+        <input type="text" id="stockTicker">
+        <button type="button" onclick='saveTicker()'>Search</button>
+        <p></p>
+        <p>
+            <a id="stockLink" href="file:///Users/simonbrown/Documents/CodingProjects/InvestmentDashboard/stock.html"></a>
+        </p>
+        <p>
+            <a id="accountingLink" href="file:///Users/simonbrown/Documents/CodingProjects/InvestmentDashboard/accounting.html"></a>
+        </p>
+
+    </div>
+    <script>
+        var key = 'demo'
+        //var key = "M1F4SKFQRY8WE61Q"
+        var func = 'INCOME_STATEMENT';
+        var symbol;
+        var url;
+
+        async function getIncomeData() {
+            const response = await fetch(url);
+            var data = await response.json();
+            sessionStorage.setItem("incomeData", JSON.stringify(data));
+        }
+
+        async function getBalanceData() {
+            func = 'BALANCE_SHEET';
+            url = `https://www.alphavantage.co/query?function=${func}&symbol=${symbol}&apikey=${key}`;
+            const response = await fetch(url);
+            var data = await response.json();
+            sessionStorage.setItem("balanceData", JSON.stringify(data));
+        }
+        async function Main() {
+            await getIncomeData();
+            await getBalanceData();
+            document.getElementById("stockLink").innerHTML = "Stock Information";
+            document.getElementById("accountingLink").innerHTML = "Accounting Information";
+        }
+
+        function saveTicker() {
+            const input = document.getElementById("stockTicker").value;
+            symbol = input;
+            sessionStorage.setItem("symbol", symbol);
+            sessionStorage.setItem("key", key);
+            url = `https://www.alphavantage.co/query?function=${func}&symbol=${symbol}&apikey=${key}`;
+            Main();
+        }
+    </script>
+</body>

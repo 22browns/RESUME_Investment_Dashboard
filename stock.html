@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Investment Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+
+<body onload='changeInterval("daily")'>
+    <script>
+        var key = sessionStorage.getItem('key');
+        var func = 'TIME_SERIES_INTRADAY';
+        var symbol = sessionStorage.getItem('symbol');
+        var interval;
+        var priceLow = [];
+        var priceHigh = [];
+        var XValues = [];
+        var priceChart;
+        var chartTitle;
+
+        async function getData(newUrl) {
+            url = newUrl;
+            const response = await fetch(newUrl);
+            var data = await response.json();
+            return data;
+        }
+        function traverseData(dataset) {
+            priceLow = [];
+            priceHigh = [];
+            XValues = [];
+            var count = 1;
+            for (let info in dataset) {
+                if (info.includes('Time Series')) {
+                    dataset = dataset[info];
+                    break;
+                }
+            }
+            for (let key in dataset) {
+                if (func == 'TIME_SERIES_INTRADAY') {
+                    XValues.push(key.split(" ")[1]);
+                    if (interval == '1min' && count == 61) {
+                        chartTitle = "Price Highs and Lows Over Last 60 Minutes"
+                        break;
+                    }
+                    if (interval == '5min' && count == 61) {
+                        chartTitle = "Price Highs and Lows Over Last 2 Hours"
+                        break;
+                    }
+                    if (interval == '15min' && count == 49) {
+                        chartTitle = "Price Highs and Lows Over Last 12 Hours"
+                        break;
+                    }
+                    if (interval == '30min' && count == 49) {
+                        chartTitle = "Price Highs and Lows Over Last 24 Hours"
+                        break;
+                    }
+                    if (interval == '60min' && count == 49) {
+                        chartTitle = "Price Highs and Lows Over Last 48 Hours"
+                        break;
+                    }
+                }
+                else {
+                    XValues.push(key);
+                    if (interval == 'daily' && count == 31) {
+                        chartTitle = "Price Highs and Lows Over Last 30 Days"
+                        break;
+                    }
+                    if (interval == 'weekly' && count == 25) {
+                        chartTitle = "Price Highs and Lows Over Last 24 Weeks"
+                        break;
+                    }
+                    if (interval == 'monthly' && count == 13) {
+                        chartTitle = "Price Highs and Lows Over Last 12 Months"
+                        break;
+                    }
+                }
+                priceHigh.push(dataset[key]["2. high"]);
+                priceLow.push(dataset[key]["3. low"]);
+                count++;
+            }
+        }
+
+        function createPriceChart() {
+            var priceContext = document.getElementById("priceChart").getContext("2d");
+            priceChart = new Chart(priceContext, {
+                type: "line",
+                data: {
+                    labels: XValues.reverse(),
+                    datasets: [{
+                        label: "Price High",
+                        data: priceHigh.reverse(),
+                        borderColor: "red",
+                        fill: false
+                    }, {
+                        label: "Price Low",
+                        data: priceLow.reverse(),
+                        borderColor: "blue",
+                        fill: false
+                    }]
+                },
+                options: {
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                    responsive: true,
+                    legend: { display: true },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: chartTitle
+                        },
+                    }
+                }
+            });
+        }
+
+        async function Main() {
+            var dataset = await getData(url);
+            traverseData(dataset);
+            if (priceChart) {
+                priceChart.destroy();
+            }
+            createPriceChart();
+
+        }
+
+        function changeInterval(newInterval) {
+            interval = newInterval;
+            if (interval != 'daily' && interval != 'weekly' && interval != 'monthly') {
+                func = 'TIME_SERIES_INTRADAY';
+                url = `https://www.alphavantage.co/query?function=${func}&symbol=${symbol}&interval=${interval}&apikey=${key}`;
+            }
+            else {
+                var upperCaseInterval = interval.toUpperCase();
+                func = `TIME_SERIES_${upperCaseInterval}_ADJUSTED`;
+                url = `https://www.alphavantage.co/query?function=${func}&symbol=${symbol}&apikey=${key}`;
+            }
+
+            Main();
+        }
+
+
+
+    </script>
+
+    <div class="container-fluid">
+        <div class="text-center">
+            <h1>Price Chart</h1>
+            <h2>Interval</h2>
+            <button type="button" onclick="changeInterval('1min')">1 minute</button>
+            <button type="button" onclick="changeInterval('5min')">5 minutes</button>
+            <button type="button" onclick="changeInterval('15min')">15 minutes</button>
+            <button type="button" onclick="changeInterval('30min')">30 minutes</button>
+            <button type="button" onclick="changeInterval('60min')">1 hour</button>
+            <button type="button" onclick="changeInterval('daily')">Daily</button>
+            <button type="button" onclick="changeInterval('weekly')">Weekly</button>
+            <button type="button" onclick="changeInterval('monthly')">Monthly</button>
+        </div>
+        <div class="col-lg-1"></div>
+        <div class="col-lg-10">
+            <canvas id="priceChart" height="350" width="900"></canvas>
+        </div>
+        <div class="col-lg-1"></div>
+
+    </div>
+
+</body>
+
+</html>

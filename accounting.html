@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Investment Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.0.1/dist/chart.umd.min.js"> </script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+
+</head>
+
+<body onload='changeInterval("annual")'>
+    <script>
+        var func;
+        var revenueChart;
+        var returnChart;
+        let marginChart;
+        let growthChart;
+        var interval;
+        var incomeDataset;
+        var balanceDataset;
+        var yearlyIncomeData = {};
+        var yearlyBalanceData = {};
+        var revenueGraphData = {};
+        let growthData = {};
+        let marginData = {};
+
+
+
+
+        function traverseData(dataset) {
+            var firstDataset = dataset;
+
+            for (let info in dataset) {
+                var reportInterval = `${interval}Reports`;
+                if (info.includes(reportInterval)) {
+                    dataset = dataset[info];
+                    break;
+                }
+            }
+            if (func == 'INCOME_STATEMENT') {
+                createLabels(dataset);
+                marginData = {
+                    "grossMargin": [],
+                    "operatingMargin": [],
+                    "netMargin": []
+                }
+                growthData = {
+                    'revenueGrowth': [],
+                    'earningsGrowth': []
+                };
+            }
+            else {
+                yearlyBalanceData = {
+                    "roa": [],
+                    "roe": [],
+                    "FiscalYear": []
+                }
+            }
+            let count;
+            if (interval == 'quarterly') {
+                count = 40;
+            }
+            if (interval == "annual") {
+                count = 12;
+            }
+            for (let i = 0; i < count; i++) {
+                var latestReport = dataset[i];
+                if (func == 'INCOME_STATEMENT') {
+                    incomeStatementTraverse(latestReport);
+                    calculateMargins();
+                    if (i > 0) {
+                        let revenueGrowth = (yearlyIncomeData["totalRevenue"][1] - yearlyIncomeData["totalRevenue"][0]) / yearlyIncomeData["totalRevenue"][0];
+                        growthData['revenueGrowth'].unshift(revenueGrowth * 100);
+                        let earningsGrowth = (yearlyIncomeData["netIncome"][1] - yearlyIncomeData["netIncome"][0]) / yearlyIncomeData["netIncome"][0]
+                        growthData['earningsGrowth'].unshift(earningsGrowth * 100);
+                    }
+                }
+                if (func == 'BALANCE_SHEET') {
+                    balanceSheetTraverse(dataset, latestReport, i);
+                }
+            }
+        }
+
+        function createLabels(dataset) {
+            for (let label in dataset[0]) {
+                yearlyIncomeData[label] = [];
+                if (label == "totalRevenue" || label == 'costOfRevenue' || label == 'operatingExpenses' || label == 'interestExpense' || label == 'incomeTaxExpense' || label == 'netIncome') {
+                    revenueGraphData[label] = [];
+                    revenueGraphData[label + 'Percent'] = [];
+                    yearlyIncomeData[label + 'Percent'] = [];
+                }
+            }
+            yearlyIncomeData['otherIncomeExpenses'] = [];
+            yearlyIncomeData['otherIncomeExpensesPercent'] = [];
+
+            revenueGraphData['otherIncomeExpenses'] = [];
+            revenueGraphData['otherIncomeExpensesPercent'] = [];
+        }
+
+        function incomeStatementTraverse(latestReport) {
+            var sumRevenue = Number(latestReport["totalRevenue"])
+            var other = Number(latestReport["ebit"]) - Number(latestReport["operatingIncome"]);
+            yearlyIncomeData["otherIncomeExpenses"].unshift(-other);
+            if (other > 0) {
+                sumRevenue += other;
+            }
+            for (let key in yearlyIncomeData) {
+                if (key == "costOfRevenue") {
+                    var cor = Number(latestReport["grossProfit"]) - Number(latestReport["totalRevenue"]);
+                    yearlyIncomeData[key].unshift(-cor);
+                    if (cor > 0) {
+                        sumRevenue += cor;
+                    }
+                }
+                else if (key == "operatingExpenses") {
+                    var opEx = Number(latestReport["operatingIncome"]) - Number(latestReport["grossProfit"]);
+                    yearlyIncomeData[key].unshift(-opEx);
+                    if (opEx > 0) {
+                        sumRevenue += opEx;
+                    }
+                }
+                else if (key == "interestExpense") {
+                    var intEx = Number(latestReport["interestExpense"]) * -1;
+                    yearlyIncomeData[key].unshift(-intEx);
+                    if (intEx > 0) {
+                        sumRevenue += intEx;
+                    }
+                }
+                else if (key == "incomeTaxExpense") {
+                    var tax = Number(latestReport["incomeTaxExpense"]) * -1;
+                    yearlyIncomeData[key].unshift(-tax);
+                    if (tax > 0) {
+                        sumRevenue += tax;
+                    }
+                }
+                else if (key == "netIncome") {
+                    var net = Number(latestReport["netIncome"]);
+                    yearlyIncomeData[key].unshift(net);
+                    if (net > 0) {
+                        sumRevenue += net;
+                    }
+                }
+                else if (!key.includes("Percent") && key != "otherIncomeExpenses") {
+                    if (key != "fiscalDateEnding") {
+                        yearlyIncomeData[key].unshift(Number(latestReport[key]));
+                    }
+                    else {
+                        yearlyIncomeData[key].unshift(latestReport[key]);
+                    }
+                }
+            }
+            for (let key in revenueGraphData) {
+                if (key == 'totalRevenue' || key == "netIncome") {
+                    revenueGraphData[key].unshift(yearlyIncomeData[key][0]);
+                }
+                else if (!key.includes("Percent")) {
+                    revenueGraphData[key].unshift(-yearlyIncomeData[key][0]);
+                }
+                else {
+                    var index = key.indexOf("Percent");
+                    var newKey = key.substring(0, index);
+                    yearlyIncomeData[key].unshift(yearlyIncomeData[newKey][0] / sumRevenue);
+                    revenueGraphData[key].unshift(revenueGraphData[newKey][0] / sumRevenue);
+                }
+            }
+        }
+
+
+        function balanceSheetTraverse(dataset, latestReport, i) {
+            var incomeCopy = yearlyIncomeData["netIncome"].slice().reverse();
+            yearlyBalanceData["FiscalYear"].unshift(latestReport["fiscalDateEnding"]);
+            if (interval == "quarterly") {
+                yearlyBalanceData["roa"].unshift((4 * incomeCopy[i]) / ((Number(latestReport["totalAssets"]) + Number(dataset[i + 1]["totalAssets"])) / 2));
+                yearlyBalanceData["roe"].unshift((4 * incomeCopy[i]) / ((Number(latestReport["totalShareholderEquity"]) + Number(dataset[i + 1]["totalShareholderEquity"])) / 2));
+            }
+            if (interval == "annual") {
+                yearlyBalanceData["roa"].unshift((incomeCopy[i]) / ((Number(latestReport["totalAssets"]) + Number(dataset[i + 1]["totalAssets"])) / 2));
+                yearlyBalanceData["roe"].unshift((incomeCopy[i]) / ((Number(latestReport["totalShareholderEquity"]) + Number(dataset[i + 1]["totalShareholderEquity"])) / 2));
+            }
+        }
+
+        function calculateMargins() {
+            marginData["grossMargin"].unshift((yearlyIncomeData["grossProfit"][0]) / (yearlyIncomeData["totalRevenue"][0]));
+            marginData["operatingMargin"].unshift((yearlyIncomeData["operatingIncome"][0]) / (yearlyIncomeData["totalRevenue"][0]));
+            marginData["netMargin"].unshift((yearlyIncomeData["netIncome"][0]) / (yearlyIncomeData["totalRevenue"][0]));
+        }
+
+        function createIncomeBreakdownChart() {
+            var revenueContext = document.getElementById("revenueChart").getContext("2d");
+            revenueChart = new Chart(revenueContext, {
+                type: "bar",
+                data: {
+                    labels: yearlyIncomeData["fiscalDateEnding"],
+                    datasets: [{
+                        label: "Sales/Service Revenue",
+                        backgroundColor: "rgb(52, 152, 219)",
+                        data: revenueGraphData["totalRevenuePercent"],
+                    }, {
+                        label: "Cost of Revenue",
+                        backgroundColor: "rgb(231, 76, 60)",
+                        data: revenueGraphData["costOfRevenuePercent"],
+                    }, {
+                        label: "Operating Expenses",
+                        backgroundColor: "rgb(214, 137, 16)",
+                        data: revenueGraphData["operatingExpensesPercent"],
+                    }, {
+                        label: "Other Income and Expenses",
+                        backgroundColor: "rgb(142, 68, 173)",
+                        data: revenueGraphData["otherIncomeExpensesPercent"],
+                    }, {
+                        label: "Interest Expense",
+                        backgroundColor: "rgb(146, 43, 33)",
+                        data: revenueGraphData["interestExpensePercent"],
+                    }
+                        , {
+                        label: "Income Tax Expense",
+                        backgroundColor: "rgb(241, 196, 15)",
+                        data: revenueGraphData["incomeTaxExpensePercent"],
+                    }
+                        , {
+                        label: "Net Income",
+                        backgroundColor: "rgb(26, 188, 156)",
+                        data: revenueGraphData["netIncomePercent"],
+                    }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: interval.charAt(0).toUpperCase() + interval.substring(1) + ' Income Statement Breakdown'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                        },
+                        y: {
+                            stacked: true
+                        }
+                    }
+
+                }
+            });
+        }
+        function createMarginChart(newMarginData) {
+            var returnContext = document.getElementById("marginChart").getContext("2d");
+            marginChart = new Chart(returnContext, {
+                type: "line",
+                data: {
+                    labels: yearlyIncomeData["fiscalDateEnding"],
+                    datasets: [{
+                        label: "Gross Margin",
+                        data: newMarginData["grossMargin"],
+                        borderColor: "red",
+                        fill: false
+                    }, {
+                        label: "Operating Margin",
+                        data: newMarginData["operatingMargin"],
+                        borderColor: "blue",
+                        fill: false
+                    }, {
+                        label: "Net Margin",
+                        data: newMarginData["netMargin"],
+                        borderColor: "green",
+                        fill: false
+                    }]
+                },
+                options: {
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            let changedData = deleteDataPoint(elements, newMarginData);
+                            marginChart.destroy();
+                            createMarginChart(changedData);
+                        }
+                    },
+                    responsive: true,
+                    legend: { display: true },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: interval.charAt(0).toUpperCase() + interval.substring(1) + " Margins"
+                        },
+                    }
+                }
+            });
+        }
+
+        function createReturnChart(newBalanceData) {
+            var returnContext = document.getElementById("returnChart").getContext("2d");
+            returnChart = new Chart(returnContext, {
+                type: "line",
+                data: {
+                    labels: yearlyBalanceData["FiscalYear"],
+                    datasets: [{
+                        label: "Return on Assets",
+                        data: newBalanceData["roa"],
+                        borderColor: "red",
+                        fill: false
+                    }, {
+                        label: "Return on Equity",
+                        data: newBalanceData["roe"],
+                        borderColor: "blue",
+                        fill: false
+                    }]
+                },
+                options: {
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            let changedData = deleteDataPoint(elements, newBalanceData);
+                            returnChart.destroy();
+                            createReturnChart(changedData);
+                        }
+                    },
+                    responsive: true,
+                    legend: { display: true },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: interval.charAt(0).toUpperCase() + interval.substring(1) + " Return Ratios"
+                        },
+                    }
+                }
+            });
+        }
+
+        function createGrowthChart(newGrowthData) {
+            var returnContext = document.getElementById("growthChart").getContext("2d");
+            growthChart = new Chart(returnContext, {
+                type: "line",
+                data: {
+                    labels: yearlyIncomeData["fiscalDateEnding"].slice(1,),
+                    datasets: [{
+                        label: "Revenue growth",
+                        data: newGrowthData['revenueGrowth'],
+                        borderColor: "red",
+                        fill: false
+                    }, {
+                        label: "Earnings growth",
+                        data: newGrowthData['earningsGrowth'],
+                        borderColor: "green",
+                        fill: false
+                    }]
+                },
+                options: {
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            let changedData = deleteDataPoint(elements, newGrowthData);
+                            growthChart.destroy();
+                            createGrowthChart(changedData);
+                        }
+                    },
+                    responsive: true,
+                    legend: { display: true },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: interval.charAt(0).toUpperCase() + interval.substring(1) + " Revenue and Earnings Growth (%)"
+                        },
+                    }
+                }
+            });
+        }
+
+        function changeInterval(newInterval) {
+            interval = newInterval;
+            incomeBreakdown();
+            recreateGrowth();
+            recreateMargin();
+            createReturns();
+
+
+        }
+
+        function recreateGrowth() {
+            if (growthChart) {
+                growthChart.destroy();
+            }
+            createGrowthChart(growthData);
+        }
+
+        function recreateMargin() {
+            if (marginChart) {
+                marginChart.destroy();
+            }
+            createMarginChart(marginData);
+        }
+
+        function recreateIncome() {
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+            createIncomeBreakdownChart();
+        }
+
+
+        async function incomeBreakdown() {
+            func = 'INCOME_STATEMENT';
+            incomeDataset = JSON.parse(sessionStorage.getItem("incomeData"));
+            traverseData(incomeDataset);
+            recreateIncome();
+        }
+
+        async function createReturns() {
+            func = 'BALANCE_SHEET';
+            balanceDataset = JSON.parse(sessionStorage.getItem("balanceData"));
+            traverseData(balanceDataset);
+            recreateReturns();
+        }
+
+        function recreateReturns() {
+            if (returnChart) {
+                returnChart.destroy();
+            }
+            createReturnChart(yearlyBalanceData);
+        }
+
+        function deleteDataPoint(elements, newData) {
+            const firstElement = elements[0];
+            const dataIndex = firstElement.index;
+            const datasetIndex = firstElement.datasetIndex;
+            let changedData = JSON.parse(JSON.stringify(newData));
+
+            let label = (Object.keys(changedData))[datasetIndex];
+            let beforeValue = 0;
+            let afterValue = 0;
+            let division = 0;
+
+            if (dataIndex > 0) {
+                beforeValue = changedData[label][dataIndex - 1];
+                division += 1;
+            }
+            if (dataIndex != changedData[label].length - 1) {
+                afterValue = changedData[label][dataIndex + 1];
+                division += 1;
+            }
+
+            let average = (beforeValue + afterValue) / division;
+            changedData[label][dataIndex] = average;
+
+            return changedData;
+        }
+
+    </script>
+    <div class="container-fluid">
+        <div class="text-center">
+            <div class="row">
+                <h1>Financial Statement Analytics</h1>
+                <button type="button" onclick="changeInterval('quarterly')">Quarterly Reports</button>
+                <button type="button" onclick="changeInterval('annual')">Annual Reports</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-6">
+                <canvas id="revenueChart" height="400" width="700"></canvas>
+            </div>
+            <div class="col-lg-6">
+                <canvas id="growthChart" height="400" width="700"></canvas>
+                <button type="button" onclick="recreateGrowth()">Reset Growth Chart</button>
+            </div>
+        </div>
+        <div class="row pt-5">
+            <div class="col-lg-6">
+                <canvas id="marginChart" height="400" width="700"></canvas>
+                <button type="button" onclick="recreateMargin()">Reset MarginChart</button>
+            </div>
+            <div class="col-lg-6">
+                <canvas id="returnChart" height="400" width="700"></canvas>
+                <button type="button" onclick="recreateReturns()">Reset Return Chart</button>
+            </div>
+        </div>
+    </div>
+    <label id="thing"></label>
+</body>
+
+</html>
