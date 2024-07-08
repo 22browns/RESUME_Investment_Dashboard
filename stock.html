@@ -17,7 +17,7 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 </head>
 
-<body onload='changeInterval("daily")'>
+<body onload='pageLoad()'>
     <script>
         var key = sessionStorage.getItem('key');
         var func = 'TIME_SERIES_INTRADAY';
@@ -25,6 +25,7 @@
         var interval;
         var priceLow = [];
         var priceHigh = [];
+        let priceTarget = [];
         var XValues = [];
         var priceChart;
         var chartTitle;
@@ -48,7 +49,7 @@
             }
             for (let key in dataset) {
                 if (func == 'TIME_SERIES_INTRADAY') {
-                    XValues.push(key.split(" ")[1]);
+                    XValues.unshift(key.split(" ")[1]);
                     if (interval == '1min' && count == 61) {
                         chartTitle = "Price Highs and Lows Over Last 60 Minutes"
                         break;
@@ -85,8 +86,9 @@
                         break;
                     }
                 }
-                priceHigh.push(dataset[key]["2. high"]);
-                priceLow.push(dataset[key]["3. low"]);
+                priceHigh.unshift(dataset[key]["2. high"]);
+                priceLow.unshift(dataset[key]["3. low"]);
+                priceTarget.unshift(476);
                 count++;
             }
         }
@@ -96,15 +98,20 @@
             priceChart = new Chart(priceContext, {
                 type: "line",
                 data: {
-                    labels: XValues.reverse(),
+                    labels: XValues,
                     datasets: [{
+                        label: "Price Target",
+                        data: priceTarget,
+                        borderColor: "Green",
+                        fill: false
+                    },{
                         label: "Price High",
-                        data: priceHigh.reverse(),
+                        data: priceHigh,
                         borderColor: "red",
                         fill: false
                     }, {
                         label: "Price Low",
-                        data: priceLow.reverse(),
+                        data: priceLow,
                         borderColor: "blue",
                         fill: false
                     }]
@@ -151,29 +158,120 @@
             Main();
         }
 
+        function populateTable(){
+            let type1 = "Revenue Growth";
+            let target1 = 10;
+            let actual1 = 5;
+            let margin1 = (actual1 - target1)/target1;
+            document.getElementById("type1").innerHTML = type1;
+            document.getElementById("target1").innerHTML = target1;
+            document.getElementById("actual1").innerHTML = actual1;
+            document.getElementById("margin1").innerHTML = (margin1*100) + "%";
+            if(target1 <= actual1){
+                document.getElementById("row1").classList.add("success");
+            }
+            else{
+                document.getElementById("row1").classList.add("danger");
+            }
+
+            let type2 = "Earnings Growth";
+            let target2 = 3;
+            let actual2 = 6;
+            let margin2 = (actual2 - target2)/target2;
+            document.getElementById("type2").innerHTML = type2;
+            document.getElementById("target2").innerHTML = target2;
+            document.getElementById("actual2").innerHTML = actual2;
+            document.getElementById("margin2").innerHTML = (margin2*100) + "%";
+            if(target2 <= actual2){
+                document.getElementById("row2").classList.add("success");
+            }
+            else{
+                document.getElementById("row2").classList.add("danger");
+            }
+
+            let type3 = "New Stores";
+            let target3 = 10;
+            let actual3 = 10;
+            let margin3 = (actual3 - target3)/target3;
+            document.getElementById("type3").innerHTML = type3;
+            document.getElementById("target3").innerHTML = target3;
+            document.getElementById("actual3").innerHTML = actual3;
+            document.getElementById("margin3").innerHTML = (margin3*100) + "%";
+            if(target3 <= actual3){
+                document.getElementById("row3").classList.add("success");
+            }
+            else{
+                document.getElementById("row3").classList.add("danger");
+            }
+        }
+
+        function pageLoad(){
+            changeInterval("daily");
+            populateTable();
+        }
+
 
 
     </script>
 
     <div class="container-fluid">
-        <div class="text-center">
-            <h1>Price Chart</h1>
-            <h2>Interval</h2>
-            <button type="button" onclick="changeInterval('1min')">1 minute</button>
-            <button type="button" onclick="changeInterval('5min')">5 minutes</button>
-            <button type="button" onclick="changeInterval('15min')">15 minutes</button>
-            <button type="button" onclick="changeInterval('30min')">30 minutes</button>
-            <button type="button" onclick="changeInterval('60min')">1 hour</button>
-            <button type="button" onclick="changeInterval('daily')">Daily</button>
-            <button type="button" onclick="changeInterval('weekly')">Weekly</button>
-            <button type="button" onclick="changeInterval('monthly')">Monthly</button>
+        <div class="row">
+            <h1 class="text-center">Pitch Accuracy Analysis</h1>
+            <div class="col-lg-6">
+                <h2 class="text-center">Price Chart</h2>
+                <p class="text-center">
+                    <button type="button" onclick="changeInterval('1min')">1 minute</button>
+                    <button type="button" onclick="changeInterval('5min')">5 minutes</button>
+                    <button type="button" onclick="changeInterval('15min')">15 minutes</button>
+                    <button type="button" onclick="changeInterval('30min')">30 minutes</button>
+                    <button type="button" onclick="changeInterval('60min')">1 hour</button>
+                    <button type="button" onclick="changeInterval('daily')">Daily</button>
+                    <button type="button" onclick="changeInterval('weekly')">Weekly</button>
+                    <button type="button" onclick="changeInterval('monthly')">Monthly</button>
+                </p>
+            </div>
+            <div class="col-lg-6"></div>
         </div>
-        <div class="col-lg-1"></div>
-        <div class="col-lg-10">
-            <canvas id="priceChart" height="350" width="900"></canvas>
-        </div>
-        <div class="col-lg-1"></div>
-
+        <div class="row">
+            <div class="col-lg-6">
+                <canvas id="priceChart" height="400" width="700"></canvas>
+            </div>
+            <div class="col-lg-6">
+                <h2>Target Metrics</h2>
+                <p>The following table summarizes the target metrics within the stock pitch (Target column) and tracks them against current reportings and predictions (Actual column).
+                    The Margin Column displays the percent difference between the Target Metric and its reported outcome. <b>**Current Numbers are Placeholders**</b>
+                </p>
+                <table class="table">
+                <thead>
+                    <tr>
+                    <th>Type</th>
+                    <th>Target</th>
+                    <th>Actual</th>
+                    <th>Margin</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr id="row1">
+                    <td id="type1"></td>
+                    <td id="target1"></td>
+                    <td id="actual1"></td>
+                    <td id="margin1"></td>
+                    </tr>      
+                    <tr id="row2">
+                    <td id="type2"></td>
+                    <td id="target2"></td>
+                    <td id="actual2"></td>
+                    <td id="margin2"></td>
+                    </tr>
+                    <tr id="row3">
+                    <td id="type3"></td>
+                    <td id="target3"></td>
+                    <td id="actual3"></td>
+                    <td id="margin3"></td>
+                    </tr>
+                </tbody>
+                </table>
+            </div>
     </div>
 
 </body>
