@@ -18,6 +18,7 @@
 
     <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cheerio@1.0.0-rc.12/lib/index.min.js"></script>
+    <script src="server.js"></script>
 
 </head>
 
@@ -93,7 +94,12 @@
                     XValues.unshift(key);
                 }
                 priceClose.unshift(dataset[key]["4. close"]);
-                priceTarget.unshift(476);
+                if (sessionStorage.getItem('symbol') == "IBM") {
+                            priceTarget.unshift(200.64);
+                        }
+                        else {
+                            priceTarget.unshift(454);
+                        }
                 count++;
             }
         }
@@ -101,6 +107,7 @@
         async function createPriceChart() {
             if (priceChart) {
                 priceChart.destroy();
+                chartTitle = "";
             }
             var priceContext = document.getElementById("priceChart").getContext("2d");
             if (interval == 'monthly') {
@@ -117,6 +124,13 @@
                     projections = await fetchValuations();
 
                     for (let i = 0; i < XValues.length; i++) {
+                        if (sessionStorage.getItem('symbol') == "IBM") {
+                            priceTarget.unshift(200.64);
+                        }
+                        else {
+                            priceTarget.unshift(454);
+                        }
+
                         if (i == priceClose.length - 1) {
                             projectedHigh.push(priceClose[priceClose.length - 1]);
                             projectedAverage.push(priceClose[priceClose.length - 1]);
@@ -136,9 +150,22 @@
                 }
                 else {
                     chartTitle = "Price Close Since August 2023 With July 2024 Price Projections"
-                    projections = [492.76, 475.73, 467.54];
+                    if (sessionStorage.getItem('symbol') == "IBM") {
+                        projections = [184.15, 184.15, 184.15];
+                    }
+                    else {
+                        projections = [547, 454, 338];
+                    }
+
 
                     for (let i = 0; i < XValues.length; i++) {
+                        if (sessionStorage.getItem('symbol') == "IBM") {
+                            priceTarget.unshift(200.64);
+                        }
+                        else {
+                            priceTarget.unshift(454);
+                        }
+
                         if (i == 11) {
                             projectedHigh.push(priceClose[11]);
                             projectedAverage.push(priceClose[11]);
@@ -280,65 +307,223 @@
         }
 
         function populateTable() {
-            let type1 = "Revenue Growth";
-            let target1 = 10;
-            let actual1 = 5;
-            let margin1 = (actual1 - target1) / target1;
-            document.getElementById("type1").innerHTML = type1;
-            document.getElementById("target1").innerHTML = target1;
-            document.getElementById("actual1").innerHTML = actual1;
-            document.getElementById("margin1").innerHTML = (margin1 * 100) + "%";
-            if (target1 <= actual1) {
-                document.getElementById("row1").classList.add("success");
+            let incomeData = JSON.parse(sessionStorage.getItem("incomeData"));
+            let revenue2023;
+            let q1_Revenue_Growth;
+            let q2_Revenue_Growth;
+            let q3_Revenue_Growth;
+            let q4_Revenue_Growth;
+            let revenue_Total = 0;
+            let revenue_Denominator = 0;
+
+            let q1_Earnings_Growth;
+            let q2_Earnings_Growth;
+            let q3_Earnings_Growth;
+            let q4_Earnings_Growth;
+            let earnings_Total = 0;
+            let earnings_Denominator = 0;
+
+            let q1_Net_Margin;
+            let q2_Net_Margin;
+            let q3_Net_Margin;
+            let q4_Net_Margin;
+            let margin_Total = 0;
+            let margin_Denominator = 0;
+
+            for (let i = 0; i < incomeData["annualReports"].length; i++) {
+                if (incomeData["annualReports"][i]["fiscalDateEnding"] == "2023-12-31") {
+                    revenue2023 = incomeData["annualReports"][i]["totalRevenue"];
+                    break;
+                }
             }
-            else {
-                document.getElementById("row1").classList.add("danger");
+            for (let i = 0; i < incomeData["quarterlyReports"].length; i++) {
+                if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2023-12-31") {
+                    break;
+                }
+                else {
+                    if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2024-03-31") {
+                        let q1_2024_revenue = Number(incomeData["quarterlyReports"][i]["totalRevenue"]);
+                        let q1_2023_revenue = Number(incomeData["quarterlyReports"][i + 4]["totalRevenue"]);
+                        q1_Revenue_Growth = (q1_2024_revenue - q1_2023_revenue) / q1_2023_revenue;
+                        q1_Revenue_Growth = Math.round(q1_Revenue_Growth * 10000) / 100;
+                        revenue_Total += q1_Revenue_Growth;
+                        revenue_Denominator++;
+
+                        let q1_2024_earnings = Number(incomeData["quarterlyReports"][i]["netIncome"]);
+                        let q1_2023_earnings = Number(incomeData["quarterlyReports"][i + 4]["netIncome"]);
+                        q1_Earnings_Growth = (q1_2024_earnings - q1_2023_earnings) / q1_2023_earnings;
+                        q1_Earnings_Growth = Math.round(q1_Earnings_Growth * 10000) / 100;
+                        earnings_Total += q1_Earnings_Growth
+                        earnings_Denominator++;
+
+                        q1_Net_Margin = q1_2024_earnings / q1_2024_revenue;
+                        q1_Net_Margin = Math.round(q1_Net_Margin * 10000) / 100;
+                        margin_Total += q1_Net_Margin
+                        margin_Denominator++;
+
+
+                    }
+                    if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2024-06-31") {
+                        let q2_2024_revenue = Number(incomeData["quarterlyReports"][i]["totalRevenue"]);
+                        let q2_2023_revenue = Number(incomeData["quarterlyReports"][i + 4]["totalRevenue"]);
+                        q2_Revenue_Growth = (q2_2024_revenue - q2_2023_revenue) / q2_2023_revenue;
+                        q2_Revenue_Growth = Math.round(q2_Revenue_Growth * 10000) / 100;
+                        revenue_Total += q2_Revenue_Growth;
+                        revenue_Denominator++;
+
+                        let q2_2024_earnings = Number(incomeData["quarterlyReports"][i]["netIncome"]);
+                        let q2_2023_earnings = Number(incomeData["quarterlyReports"][i + 4]["netIncome"]);
+                        q2_Earnings_Growth = (q2_2024_earnings - q2_2023_earnings) / q2_2023_earnings;
+                        q2_Earnings_Growth = Math.round(q2_Earnings_Growth * 10000) / 100;
+                        earnings_Total += q2_Earnings_Growth;
+                        earnings_Denominator++;
+
+                        q2_Net_Margin = q2_2024_earnings / q2_2024_revenue;
+                        q2_Net_Margin = Math.round(q2_Net_Margin * 10000) / 100;
+                        margin_Total += q2_Net_Margin
+                        margin_Denominator++;
+                    }
+                    if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2024-09-31") {
+                        let q3_2024_revenue = Number(incomeData["quarterlyReports"][i]["totalRevenue"]);
+                        let q3_2023_revenue = Number(incomeData["quarterlyReports"][i + 4]["totalRevenue"]);
+                        q3_Revenue_Growth = (q3_2024_revenue - q3_2023_revenue) / q3_2023_revenue;
+                        q3_Revenue_Growth = Math.round(q3_Revenue_Growth * 10000) / 100;
+                        revenue_Total += q3_Revenue_Growth;
+                        revenue_Denominator++;
+
+                        let q3_2024_earnings = Number(incomeData["quarterlyReports"][i]["netIncome"]);
+                        let q3_2023_earnings = Number(incomeData["quarterlyReports"][i + 4]["netIncome"]);
+                        q3_Earnings_Growth = (q3_2024_earnings - q3_2023_earnings) / q3_2023_earnings;
+                        q3_Earnings_Growth = Math.round(q3_Earnings_Growth * 10000) / 100;
+                        earnings_Total += q3_Earnings_Growth
+                        earnings_Denominator++;
+
+                        q3_Net_Margin = q3_2024_earnings / q3_2024_revenue;
+                        q3_Net_Margin = Math.round(q3_Net_Margin * 10000) / 100;
+                        margin_Total += q3_Net_Margin
+                        margin_Denominator++;
+                    }
+                    if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2024-12-31") {
+                        let q4_2024_revenue = Number(incomeData["quarterlyReports"][i]["totalRevenue"]);
+                        let q4_2023_revenue = Number(incomeData["quarterlyReports"][i + 4]["totalRevenue"]);
+                        q4_Revenue_Growth = (q4_2024_revenue - q4_2023_revenue) / q4_2023_revenue;
+                        q4_Revenue_Growth = Math.round(q4_Revenue_Growth * 10000) / 100;
+                        revenue_Total += q4_Revenue_Growth;
+                        revenue_Denominator++;
+
+                        let q4_2024_earnings = Number(incomeData["quarterlyReports"][i]["netIncome"]);
+                        let q4_2023_earnings = Number(incomeData["quarterlyReports"][i + 4]["netIncome"]);
+                        q4_Earnings_Growth = (q4_2024_earnings - q4_2023_earnings) / q4_2023_earnings;
+                        q4_Earnings_Growth = Math.round(q4_Earnings_Growth * 10000) / 100;
+                        earnings_Total += q4_Earnings_Growth
+                        earnings_Denominator++;
+
+                        q4_Net_Margin = q4_2024_earnings / q4_2024_revenue;
+                        q4_Net_Margin = Math.round(q4_Net_Margin * 10000) / 100;
+                        margin_Total += q4_Net_Margin
+                        margin_Denominator++;
+                    }
+                }
             }
 
-            let type2 = "Earnings Growth";
-            let target2 = 3;
-            let actual2 = 6;
-            let margin2 = (actual2 - target2) / target2;
-            document.getElementById("type2").innerHTML = type2;
-            document.getElementById("target2").innerHTML = target2;
-            document.getElementById("actual2").innerHTML = actual2;
-            document.getElementById("margin2").innerHTML = (margin2 * 100) + "%";
-            if (target2 <= actual2) {
-                document.getElementById("row2").classList.add("success");
+
+
+
+            let revenueLabel = "Revenue Growth";
+            let targetRevenue;
+            if (sessionStorage.getItem('symbol') == "IBM") {
+                targetRevenue = 3.68;
             }
             else {
-                document.getElementById("row2").classList.add("danger");
+                targetRevenue = 5.90;
             }
 
-            let type3 = "New Stores";
-            let target3 = 10;
-            let actual3 = 10;
-            let margin3 = (actual3 - target3) / target3;
-            document.getElementById("type3").innerHTML = type3;
-            document.getElementById("target3").innerHTML = target3;
-            document.getElementById("actual3").innerHTML = actual3;
-            document.getElementById("margin3").innerHTML = (margin3 * 100) + "%";
-            if (target3 <= actual3) {
-                document.getElementById("row3").classList.add("success");
+            let actualRevenue = Number(revenue_Total / revenue_Denominator);
+            document.getElementById("revenue").innerHTML = revenueLabel;
+            document.getElementById("targetRevenue").innerHTML = targetRevenue + '%';
+            document.getElementById("q1Revenue").innerHTML = q1_Revenue_Growth + '%';
+            document.getElementById("q2Revenue").innerHTML = q2_Revenue_Growth + '%';
+            document.getElementById("q3Revenue").innerHTML = q3_Revenue_Growth + '%';
+            document.getElementById("q4Revenue").innerHTML = q4_Revenue_Growth + '%';
+            document.getElementById("annualRevenue").innerHTML = actualRevenue + '%';
+            document.getElementById("difference1").innerHTML = Math.round((actualRevenue - targetRevenue) * 100) / 100 + '%';
+            if (targetRevenue <= actualRevenue) {
+                document.getElementById("revenueGrowth").classList.add("success");
             }
             else {
-                document.getElementById("row3").classList.add("danger");
+                document.getElementById("revenueGrowth").classList.add("danger");
             }
+
+            let earningsLabel = "Earnings Growth";
+            let targetEarnings;
+            if (sessionStorage.getItem('symbol') == "IBM") {
+                targetEarnings = 6.20;
+            }
+            else {
+                targetEarnings = 2.17;
+            }
+            let actualEarnings = earnings_Total / earnings_Denominator;
+            document.getElementById("earnings").innerHTML = earningsLabel;
+            document.getElementById("targetEarnings").innerHTML = targetEarnings + '%';
+            document.getElementById("q1Earnings").innerHTML = q1_Earnings_Growth + '%';
+            document.getElementById("q2Earnings").innerHTML = q2_Earnings_Growth + '%';
+            document.getElementById("q3Earnings").innerHTML = q3_Earnings_Growth + '%';
+            document.getElementById("q4Earnings").innerHTML = q4_Earnings_Growth + '%';
+            document.getElementById("annualEarnings").innerHTML = actualEarnings + '%';
+            document.getElementById("difference2").innerHTML = Math.round((actualEarnings - targetEarnings) * 100) / 100 + '%';
+            if (targetEarnings <= actualEarnings) {
+                document.getElementById("earningsGrowth").classList.add("success");
+            }
+            else {
+                document.getElementById("earningsGrowth").classList.add("danger");
+            }
+
+
+            let marginLabel = "Net Margin";
+            let targetMargin;
+            if (sessionStorage.getItem('symbol') == "IBM") {
+                targetMargin = 15.0;
+            }
+            else {
+                targetMargin = 10.32;
+            }
+            let actualMargin = margin_Total / margin_Denominator;
+            document.getElementById("Margin").innerHTML = marginLabel;
+            document.getElementById("targetMargin").innerHTML = targetMargin + '%';
+            document.getElementById("q1Margin").innerHTML = q1_Net_Margin + '%';
+            document.getElementById("q2Margin").innerHTML = q2_Net_Margin + '%';
+            document.getElementById("q3Margin").innerHTML = q3_Net_Margin + '%';
+            document.getElementById("q4Margin").innerHTML = q4_Net_Margin + '%';
+            document.getElementById("annualMargin").innerHTML = actualMargin + '%';
+            document.getElementById("difference3").innerHTML = Math.round((actualMargin - targetMargin) * 100) / 100 + '%';
+            if (targetMargin <= actualMargin) {
+                document.getElementById("netMargin").classList.add("success");
+            }
+            else {
+                document.getElementById("netMargin").classList.add("danger");
+            }
+
+
         }
 
         async function fetchValuations() {
             url = `https://uncors.vercel.app/?url=https://www.tipranks.com/stocks/ulta/forecast`;
+            if (sessionStorage.getItem('symbol') == "IBM") {
+                url = `https://uncors.vercel.app/?url=https://www.tipranks.com/stocks/ibm/forecast`;
+            }
             response = await fetch(url)
             var data = await response.text();
 
             var parser = new DOMParser();
             var doc = parser.parseFromString(data, "text/html");
 
+
             let results = [];
             let tableData = doc.querySelectorAll("td.flexrsb.displayflex.laptop_flexc__");
             tableData.forEach(function (currentValue) {
                 results.push(Number(currentValue.lastChild.textContent.slice(1,)))
             });
+
             return results;
         }
 
@@ -392,29 +577,45 @@
                     <thead>
                         <tr>
                             <th>Type</th>
-                            <th>Target</th>
-                            <th>Actual</th>
-                            <th>Margin</th>
+                            <th>Annual Target</th>
+                            <th>Q1 Actual</th>
+                            <th>Q2 Actual</th>
+                            <th>Q3 Actual</th>
+                            <th>Q4 Actual</th>
+                            <th>Annual Actual</th>
+                            <th>Difference</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr id="row1">
-                            <td id="type1"></td>
-                            <td id="target1"></td>
-                            <td id="actual1"></td>
-                            <td id="margin1"></td>
+                        <tr id="revenueGrowth">
+                            <td id="revenue"></td>
+                            <td id="targetRevenue"></td>
+                            <td id="q1Revenue"></td>
+                            <td id="q2Revenue"></td>
+                            <td id="q3Revenue"></td>
+                            <td id="q4Revenue"></td>
+                            <td id="annualRevenue"></td>
+                            <td id="difference1"></td>
                         </tr>
-                        <tr id="row2">
-                            <td id="type2"></td>
-                            <td id="target2"></td>
-                            <td id="actual2"></td>
-                            <td id="margin2"></td>
+                        <tr id="earningsGrowth">
+                            <td id="earnings"></td>
+                            <td id="targetEarnings"></td>
+                            <td id="q1Earnings"></td>
+                            <td id="q2Earnings"></td>
+                            <td id="q3Earnings"></td>
+                            <td id="q4Earnings"></td>
+                            <td id="annualEarnings"></td>
+                            <td id="difference2"></td>
                         </tr>
-                        <tr id="row3">
-                            <td id="type3"></td>
-                            <td id="target3"></td>
-                            <td id="actual3"></td>
-                            <td id="margin3"></td>
+                        <tr id="netMargin">
+                            <td id="Margin"></td>
+                            <td id="targetMargin"></td>
+                            <td id="q1Margin"></td>
+                            <td id="q2Margin"></td>
+                            <td id="q3Margin"></td>
+                            <td id="q4Margin"></td>
+                            <td id="annualMargin"></td>
+                            <td id="difference3"></td>
                         </tr>
                     </tbody>
                 </table>
