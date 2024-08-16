@@ -1,5 +1,5 @@
 # Investment_Dashboard
-Hello, this repository includes a personal project of mine and **as of July 29th, 2024 this project is still in progress**.
+Hello, this repository includes a personal project of mine and **as of August 16th, 2024 this project is still in progress**.
 This project is meant to serve two functions: 1) Providing a one stop shop to analyze company financial performance over time (the accounting page serves as an example of how I plan on accomplishing this), 2) tracking the performance and accuracy of my ULTA stock pitch using a variety of benchmarks (the Pitch Accuracy page). To view the Ulta stock pitch click the Ulta Stock Pitch Outline PDF.
 
 USAGE:
