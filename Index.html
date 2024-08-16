@@ -34,8 +34,8 @@
 
     </div>
     <script>
-        //var key = 'demo'
-        var key = "M1F4SKFQRY8WE61Q"
+        var key = 'demo'
+        //var key = "M1F4SKFQRY8WE61Q"
         var func = 'INCOME_STATEMENT';
         var symbol;
         var url;
@@ -53,6 +53,7 @@
             var data = await response.json();
             sessionStorage.setItem("balanceData", JSON.stringify(data));
         }
+
         async function Main() {
             await getIncomeData();
             await getBalanceData();
