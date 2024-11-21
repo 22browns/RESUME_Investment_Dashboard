@@ -334,17 +334,17 @@
             let margin_Denominator = 0;
 
             for (let i = 0; i < incomeData["annualReports"].length; i++) {
-                if (incomeData["annualReports"][i]["fiscalDateEnding"] == "2023-12-31") {
+                if (incomeData["annualReports"][i]["fiscalDateEnding"] == "2023-10-28") {
                     revenue2023 = incomeData["annualReports"][i]["totalRevenue"];
                     break;
                 }
             }
             for (let i = 0; i < incomeData["quarterlyReports"].length; i++) {
-                if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2023-12-31") {
+                if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2023-10-28") {
                     break;
                 }
                 else {
-                    if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2024-03-31") {
+                    if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2024-02-03") {
                         let q1_2024_revenue = Number(incomeData["quarterlyReports"][i]["totalRevenue"]);
                         let q1_2023_revenue = Number(incomeData["quarterlyReports"][i + 4]["totalRevenue"]);
                         q1_Revenue_Growth = (q1_2024_revenue - q1_2023_revenue) / q1_2023_revenue;
@@ -366,7 +366,7 @@
 
 
                     }
-                    if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2024-06-31") {
+                    if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2024-05-04") {
                         let q2_2024_revenue = Number(incomeData["quarterlyReports"][i]["totalRevenue"]);
                         let q2_2023_revenue = Number(incomeData["quarterlyReports"][i + 4]["totalRevenue"]);
                         q2_Revenue_Growth = (q2_2024_revenue - q2_2023_revenue) / q2_2023_revenue;
@@ -386,7 +386,7 @@
                         margin_Total += q2_Net_Margin
                         margin_Denominator++;
                     }
-                    if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2024-09-31") {
+                    if (incomeData["quarterlyReports"][i]["fiscalDateEnding"] == "2024-08-03") {
                         let q3_2024_revenue = Number(incomeData["quarterlyReports"][i]["totalRevenue"]);
                         let q3_2023_revenue = Number(incomeData["quarterlyReports"][i + 4]["totalRevenue"]);
                         q3_Revenue_Growth = (q3_2024_revenue - q3_2023_revenue) / q3_2023_revenue;
@@ -448,7 +448,7 @@
             document.getElementById("q2Revenue").innerHTML = q2_Revenue_Growth + '%';
             document.getElementById("q3Revenue").innerHTML = q3_Revenue_Growth + '%';
             document.getElementById("q4Revenue").innerHTML = q4_Revenue_Growth + '%';
-            document.getElementById("annualRevenue").innerHTML = actualRevenue + '%';
+            document.getElementById("annualRevenue").innerHTML = Math.round(actualRevenue * 100)/100 + '%';
             document.getElementById("difference1").innerHTML = Math.round((actualRevenue - targetRevenue) * 100) / 100 + '%';
             if (targetRevenue <= actualRevenue) {
                 document.getElementById("revenueGrowth").classList.add("success");
@@ -472,7 +472,7 @@
             document.getElementById("q2Earnings").innerHTML = q2_Earnings_Growth + '%';
             document.getElementById("q3Earnings").innerHTML = q3_Earnings_Growth + '%';
             document.getElementById("q4Earnings").innerHTML = q4_Earnings_Growth + '%';
-            document.getElementById("annualEarnings").innerHTML = actualEarnings + '%';
+            document.getElementById("annualEarnings").innerHTML = Math.round(actualEarnings * 100)/100 + '%';
             document.getElementById("difference2").innerHTML = Math.round((actualEarnings - targetEarnings) * 100) / 100 + '%';
             if (targetEarnings <= actualEarnings) {
                 document.getElementById("earningsGrowth").classList.add("success");
@@ -497,8 +497,9 @@
             document.getElementById("q2Margin").innerHTML = q2_Net_Margin + '%';
             document.getElementById("q3Margin").innerHTML = q3_Net_Margin + '%';
             document.getElementById("q4Margin").innerHTML = q4_Net_Margin + '%';
-            document.getElementById("annualMargin").innerHTML = actualMargin + '%';
+            document.getElementById("annualMargin").innerHTML = Math.round(actualMargin * 100)/100 + '%';
             document.getElementById("difference3").innerHTML = Math.round((actualMargin - targetMargin) * 100) / 100 + '%';
+            document.getElementById("thing").innerHTML = "";
             if (targetMargin <= actualMargin) {
                 document.getElementById("netMargin").classList.add("success");
             }
